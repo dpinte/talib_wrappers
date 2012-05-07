@@ -7,7 +7,7 @@ You will need a working installation of TA-lib. You can find the library here::
 Update the path to the include and library directories to build the wrappers.
 
 """
-from distutils.core import setup
+from setuptools import setup, find_packages
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
 
@@ -26,8 +26,8 @@ elif sys.platform =='darwin':
 
 
 abstract_extension = Extension(
-    "ta_abstract", 
-    ["ta_abstract.pyx"],
+    "talib.ta_abstract", 
+    ["talib/ta_abstract.pyx"],
     include_dirs = [
         numpy.get_include(),
         TALIB_INCLUDE_DIR]
@@ -37,6 +37,9 @@ abstract_extension = Extension(
 )
 
 setup(
+    name='talib',
+    package=find_packages(),
     ext_modules=[abstract_extension],
+    test_suite = 'talib.test',
     cmdclass = {'build_ext': build_ext}
 )
