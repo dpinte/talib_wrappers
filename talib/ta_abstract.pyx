@@ -328,16 +328,45 @@ cdef class InputParameter:
     def __str__(self):
         return '{} ({} - {})'.format(self.name, self.type, self.flags)
 
+    def __repr__(self):
+        return self.__str__()
+
+
     cdef add_to_holder(self, TA_ParamHolder* holder, unsigned int index,
                        numpy.ndarray input_array):
 
-        if self.c_info.type == TA_Input_Price:
-            raise NotImplementedError()
 
+        cdef numpy.ndarray open
+        cdef numpy.ndarray high
+        cdef numpy.ndarray low
+        cdef numpy.ndarray close
+        cdef numpy.ndarray volume
+        cdef numpy.ndarray open_interest
+
+        if self.c_info.type == TA_Input_Price:
+
+            open = input_array[0,:].copy()
+            high = input_array[1, :].copy()
+            low = input_array[2, :].copy()
+            close = input_array[3, :].copy()
+            volume = input_array[4, :].copy()
+            open_interest = input_array[5,:].copy()
+
+            return_code = TA_SetInputParamPricePtr(
+                holder, index,
+                <double*>open.data,
+                <double*>high.data,
+                <double*>low.data,
+                <double*>close.data,
+                <double*>volume.data,
+                <double*>open_interest.data,
+            )
         elif self.c_info.type == TA_Input_Real:
-            TA_SetInputParamRealPtr(holder, index, <double*>input_array.data)
+            return_code = TA_SetInputParamRealPtr(holder, index, <double*>input_array.data)
         else:
-            TA_SetInputParamIntegerPtr(holder, index, <int*>input_array.data)
+            return_code = TA_SetInputParamIntegerPtr(holder, index, <int*>input_array.data)
+
+        check_status(return_code, 'Error while setting input parameter!')
 
 cdef class OptionalInputParameter:
 
@@ -460,6 +489,9 @@ cdef class OutputParameter:
 
     def __str__(self):
         return '{} ({} - {})'.format(self.name, self.type, self.flags)
+
+    def __repr__(self):
+        return self.__str__()
 
     cdef numpy.ndarray add_to_holder(self, TA_ParamHolder* holder,
                                      unsigned int index, int size):
@@ -584,7 +616,7 @@ cdef class TaFunction:
             cdef OutputParameter parameter
             cdef TA_Integer i
 
-            for i in range(self.nb_input):
+            for i in range(self.nb_output):
 
                 retCode = TA_GetOutputParameterInfo(
                     self.c_function, i, &param_info
